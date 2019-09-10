@@ -1,7 +1,8 @@
 package forlove;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.jsoup.Jsoup;
@@ -12,6 +13,7 @@ import org.jsoup.select.Elements;
 import base.general.BaseBean;
 import base.general.Util;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -27,6 +29,8 @@ import com.google.gson.JsonSyntaxException;
  */
 public class CorpQualifications extends BaseBean {
 
+	private static final String aptData = "http://jzsc.mohurd.gov.cn/asite/qualapt/aptData";
+	private static final String queryData = "http://jzsc.mohurd.gov.cn/dataservice/query/comp/list";
 	/**
 	 * 
 	 * <br/>2019年8月20日 下午10:06:36<br/>
@@ -81,7 +85,7 @@ public class CorpQualifications extends BaseBean {
 			map.put("qy_name", qy_name);
 		}
 		try {
-			doc = Jsoup.connect("http://jzsc.mohurd.gov.cn/dataservice/query/comp/list").data(map)
+			doc = Jsoup.connect(queryData).data(map)
 					.userAgent("Mozilla").cookie("auth", "token").timeout(300000).post();
 
 			Elements elementsByClass = doc.getElementsByClass("mtop");
@@ -107,6 +111,49 @@ public class CorpQualifications extends BaseBean {
 		//writeLog(html);
 		return html;
 	}
+	
+	/**
+	 * 取到所有大类
+	 * <br/>2019年9月10日 下午11:30:48<br/>
+	 * @param queryname
+	 * @return
+	 */
+	public String aptData(String queryname){
+		String result = "";
+		Document doc = null;
+		Map<String, String> map = new HashMap<String, String>();
+		map.put("apt_casename", queryname);
+		List<Map<String,String>> options = new ArrayList<Map<String,String>>();
+		try {
+			doc = Jsoup.connect(aptData).data(map)
+					.userAgent("Mozilla").cookie("auth", "token").timeout(300000).post();
+			Elements elementsByClass = doc.getElementsByClass("data_row");
+			/*<td><input class="icheck" type="checkbox" value="{&quot;apt_code&quot;:&quot;D101T&quot;, &quot;apt_scope&quot;:&quot;建筑工程施工总承包特级&quot;}" /></td> 
+			<td style="text-align: left;">建筑工程施工总承包特级 </td>*/
+			String value = "";
+			String apt_code = "";
+			String apt_scope = "";
+			for(Element element : elementsByClass){
+				Elements td = element.children().eq(0);// 取到第一行
+				Element checkbox = td.get(0).children().eq(0).get(0);	// 取到checkbox
+//				{"apt_code":"D105T", "apt_scope":"水利水电工程施工总承包特级"}
+				value = checkbox.attr("value");
+				JsonObject returnData = new JsonParser().parse(value).getAsJsonObject();
+				Map<String,String> data = new HashMap<String, String>(); 
+				apt_code = returnData.get("apt_code").getAsString();
+				apt_scope = returnData.get("apt_scope").getAsString();
+				data.put("apt_code", apt_code);
+				data.put("apt_scope", apt_scope);
+				options.add(data);
+			}
+			result = new Gson().toJson(options);
+		} catch (Exception e) {
+			e.printStackTrace();
+			result = "";
+		}
+		return result;
+	}
+	
 	
 	/**
 	 * 根据省份取得对应邮编
@@ -151,9 +198,10 @@ public class CorpQualifications extends BaseBean {
 		
 		CorpQualifications tg = new CorpQualifications(); 
 		//tg.getData("","","","","1","1");
-		String html = tg.getData("search", "", "奉新县聚亿建筑有限公司", "", "");
-		System.out.println(html);
+//		String html = tg.getData("search", "", "奉新县聚亿建筑有限公司", "", "");
+//		System.out.println(html);
 
+		tg.aptData("建筑");
 	}
 
 }

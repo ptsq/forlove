@@ -25,7 +25,7 @@
 		$("#div1").html("");
 		var form = $("#form1").serialize();
 		jQuery.ajax({
-			url : "qyzzAjax.jsp",
+			url : "qyzzAjax.jsp?src=querydata",
 			method:"POST",
 			data : form,
 			dataType : "text",
@@ -72,6 +72,36 @@
 	function HiddenDiv(){
 		$("#loading").hide();
 	}
+	/*
+	点击下拉框时，先取资质名称是否存在
+	存在：后端取得大类
+	不存在：使用预置的4个选项
+	*/
+	function showType(t){
+		var select_zz = $("#select_zz").val();
+		if(select_zz == ""){
+			var op = '<option value="search">根据企业名称查询</option><option value="D211A">建筑装修装饰工程专业承包一级</option><option value="D101A">建筑工程施工总承包一级</option><option value="D211B">建筑装修装饰工程专业承包二级</option>';
+			$(t).html(op);
+		}else{
+			$(t).html("");
+			$.ajax({
+				async:false,
+			  	type: 'POST',
+			  	url: "qyzzAjax.jsp?src=selectzz",
+			  	data: {"zzname":select_zz},
+			  	dataType: "json",
+			  	success: function(result){
+			  		var op = "";
+			  		console.log(result)	
+					for(i in result){
+						op+='<option value="'+result[i].apt_code+'">'+result[i].apt_scope+'</option>';
+					}
+			  		$(t).html(op);
+			  	}
+			});
+		}
+		return ;
+	}
 	</script>
   </head>
   
@@ -86,16 +116,21 @@
   			<input type="hidden" id="curno" name="pg" value="1" />
   			<input type="hidden" id="pgsz" name="pgsz" value="15" />
   			<div class="form-group">
-  			<label for="apt_code">选择大类</label>
-  			<select id="apt_code" name="apt_code" class="form-control" style="">
-  				<option value="search">根据企业名称查询</option>
-  				<option value="D211A">建筑装修装饰工程专业承包一级</option>
-  				<option value="D101A">建筑工程施工总承包一级</option>
-  			</select>
+  				<label for="select_zz">选择资质</label>
+  				<input type="text" id="select_zz" name="select_zz" class="form-control" value="" />
+  			</div>
+  			<div class="form-group">
+	  			<label for="apt_code">选择大类</label>
+	  			<select id="apt_code" name="apt_code" class="form-control" style="width:244px;" onclick="showType(this);return false;">
+	  				 <option value="search">根据企业名称查询</option>
+	  				<!--<option value="D211A">建筑装修装饰工程专业承包一级</option>
+	  				<option value="D101A">建筑工程施工总承包一级</option>
+	  				<option value="D211B">建筑装修装饰工程专业承包二级</option> -->
+	  			</select>
+  			</div>
   			<div class="form-group">
   				<label for="qy_name">企业名称</label>
   				<input type="text" id="qy_name" name="qy_name" class="form-control" value="" />
-  			</div>
   			</div>
   			<a href="javascript:;" class="btn btn-primary btn-sm" onclick="showData();">查询</a>
   		</form>
